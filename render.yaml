@@ -17,10 +17,7 @@ services:
         generateValue: true
       - key: GEMINI_API_KEY
         sync: false # Set this in the Render dashboard after deployment
-      - key: REDIS_HOST
-        value: "" # Left empty to use backend's local in-memory fallback cache
-      - key: REDIS_PORT
-        value: ""
+
 
   # 2. Frontend Docker Service (Next.js)
   - type: web
