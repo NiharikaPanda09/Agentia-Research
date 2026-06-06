@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, field_validator
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -37,6 +37,16 @@ class Settings(BaseSettings):
     # Redis config
     REDIS_HOST: str = Field(default="localhost")
     REDIS_PORT: int = Field(default=6379)
+
+    @field_validator("REDIS_PORT", mode="before")
+    @classmethod
+    def parse_redis_port(cls, v):
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return 6379
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return 6379
 
     @computed_field
     @property
