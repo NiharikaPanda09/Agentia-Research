@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, computed_field, field_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     REDIS_HOST: str = Field(default="localhost")
     REDIS_PORT: int = Field(default=6379)
 
+    DATABASE_URL: Optional[str] = Field(default=None)
+
     @field_validator("REDIS_PORT", mode="before")
     @classmethod
     def parse_redis_port(cls, v):
@@ -48,12 +50,14 @@ class Settings(BaseSettings):
         except (ValueError, TypeError):
             return 6379
 
-    @computed_field
-    @property
-    def DATABASE_URL(self) -> str:
-        if self.DATABASE_MODE == "postgres":
-            return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-        return "sqlite:///./research_workspace.db"
+    @model_validator(mode="after")
+    def assemble_db_url(self) -> "Settings":
+        if not self.DATABASE_URL:
+            if self.DATABASE_MODE == "postgres":
+                self.DATABASE_URL = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            else:
+                self.DATABASE_URL = "sqlite:///./research_workspace.db"
+        return self
 
     @computed_field
     @property
